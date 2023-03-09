@@ -166,7 +166,8 @@ void Interrupt::OneTick() {
                                // for a context switch, ok to do it now
     yieldOnReturn = FALSE;
     status = SystemMode;  // yield is a kernel routine
-    kernel->currentThread->Yield();
+    kernel->currentThread->Yield(); // Relinquish the CPU if any 
+                                    // other thread is runnable
     status = oldStatus;
   }
 }
@@ -286,8 +287,12 @@ Interrupt::CloseFile(OpenFileId id)
 //----------------------------------------------------------------------
 void Interrupt::Schedule(CallBackObj *toCall, int fromNow, IntType type) {
   int when = kernel->stats->totalTicks + fromNow;
+  //	arg1 is the object to call when the interrupt occurs
+  //	arg2 is when (in simulated time) the interrupt is to occur
+  //	arg3 is the hardware device that generated the interrupt
   PendingInterrupt *toOccur = new PendingInterrupt(toCall, when, type);
-
+  //Initialize a hardware device interrupt that is to be scheduled
+  //	to occur in the near future.
   DEBUG(dbgInt, "Scheduling interrupt handler the " << intTypeNames[type] << " at time = " << when);
   ASSERT(fromNow > 0);
 

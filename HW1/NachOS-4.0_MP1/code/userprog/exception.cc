@@ -55,7 +55,7 @@ void ExceptionHandler(ExceptionType which) {
   DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
   DEBUG(dbgTraCode, "In ExceptionHandler(), Received Exception " << which << " type: " << type << ", " << kernel->stats->totalTicks);
   switch (which) {
-    case SyscallException:
+    case SyscallException:  //看是哪個System call
       switch (type) {
         case SC_Halt:
           DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
@@ -100,10 +100,83 @@ void ExceptionHandler(ExceptionType which) {
           return;
           ASSERTNOTREACHED();
           break;
+        //這邊定義API ; system call實作交給ksyscall.h
         // TODO (Open): Add SC_Open case to let the kernel able to handle this system call. You can imitate SC_Create case.
         // TODO (Write): Add SC_Write case to let the kernel able to handle this system call. You can imitate SC_Add case.
         // TODO (Read): Add SC_Read case to let the kernel able to handle this system call. You can imitate SC_Add case.
         // TODO (Close): Add SC_Close case to let the kernel able to handle this system call. You can imitate SC_Create case.
+        case SC_Open:
+          DEBUG(dbgSys, "File Open.\n");
+          val = kernel->machine->ReadRegister(4); //arg1
+          {
+            char *filename = &(kernel->machine->mainMemory[val]);
+            DEBUG(dbgSys, "File name :"<<filename<<"\n");
+            // cout << filename << endl;
+            status = SysOpen(filename);
+            kernel->machine->WriteRegister(2, (int)status);
+          }
+          kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+          kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          return;
+          ASSERTNOTREACHED();
+          break;
+        case SC_Write:
+          DEBUG(dbgSys, "File Writing...\n");
+          val = kernel->machine->ReadRegister(4); //arg1
+          numChar = kernel->machine->ReadRegister(5); //arg2
+         
+          fileID = kernel->machine->ReadRegister(6); //arg3
+          DEBUG(dbgSys, "file ID:"<<fileID<<"\n");
+          {
+            char *buffer = &(kernel->machine->mainMemory[val]);
+            DEBUG(dbgSys, "Buffer:"<<buffer<<"\n");
+            // cout << filename << endl;
+            //numChar,fileID在函數先定義好了
+            status = SysWrite(buffer,numChar,fileID);
+            kernel->machine->WriteRegister(2, (int)status);
+          }
+          kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+          kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          return;
+          ASSERTNOTREACHED();
+          break;
+        case SC_Read:
+          DEBUG(dbgSys, "File Reading...\n");
+          val = kernel->machine->ReadRegister(4); //arg1
+          numChar = kernel->machine->ReadRegister(5); //arg2
+          
+          fileID = kernel->machine->ReadRegister(6); //arg3
+          DEBUG(dbgSys, "file ID:"<<fileID<<"\n");
+          {
+            char *buffer = &(kernel->machine->mainMemory[val]);
+            DEBUG(dbgSys, "Buffer:"<<buffer<<"\n");
+            // cout << filename << endl;
+            //numChar,fileID在函數先定義好了
+            status = SysRead(buffer,numChar,fileID);
+            kernel->machine->WriteRegister(2, (int)status);
+          }
+          kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+          kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          return;
+          ASSERTNOTREACHED();
+          break;
+        case SC_Close:
+          DEBUG(dbgSys, "File Closing...\n");
+          fileID = kernel->machine->ReadRegister(4); //arg1
+          DEBUG(dbgSys, "file ID:"<<fileID<<"\n");
+
+          status = SysClose(fileID);
+          DEBUG(dbgSys, "status:"<<status<<"\n");
+          kernel->machine->WriteRegister(2, (int)status);
+          kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+          kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+          return;
+          ASSERTNOTREACHED();
+          break;
         case SC_Add:
           DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
           /* Process SysAdd Systemcall*/

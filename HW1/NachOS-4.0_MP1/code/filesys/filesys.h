@@ -50,7 +50,7 @@ class FileSystem {
   }
 
   bool Create(char *name) {
-    int fileDescriptor = OpenForWrite(name);
+    int fileDescriptor = OpenForWrite(name); //在lib的sysdep.cc
 
     if (fileDescriptor == -1) return FALSE;
     Close(fileDescriptor);
@@ -58,7 +58,7 @@ class FileSystem {
   }
   // The OpenFile function is used for open user program  [userprog/addrspace.cc]
   OpenFile *Open(char *name) {
-    int fileDescriptor = OpenForReadWrite(name, FALSE);
+    int fileDescriptor = OpenForReadWrite(name, FALSE); //在lib的sysdep.cc
     if (fileDescriptor == -1) return NULL;
     return new OpenFile(fileDescriptor);
   }
@@ -68,28 +68,44 @@ class FileSystem {
     1) If the file is not exist or OpenFileTable is full, return -1
     2) Otherwise, find the empty table to place the new created OpenFile and return its index.
   */
-  // OpenFileId OpenAFile(char *name) {}
+   OpenFileId OpenAFile(char *name) {
+      int fileDescriptor = OpenForReadWrite(name, FALSE);
+      return fileDescriptor;
+   }
 
   // The WriteFile function is used for kernel write system call
   /* TODO (Write)
     1) If the id is out of range or indicates to a non-exist file, return -1
     2) Otherwise, call OpenFile function to execute write and return the number of characters. 
   */
-  // int WriteFile(char *buffer, int size, OpenFileId id) {}
+  //命名衝突
+   int WriteAFile(char *buffer, int size, OpenFileId id) {
+      if(size<=0) return -1;
+      WriteFile(id,buffer,size);
+      return size; //return the number of characters.
+   }
 
   // The ReadFile function is used for kernel read system call
   /* TODO (Read)
     1) If the id is out of range or indicates to a non-exist file, return -1
     2) Otherwise, call OpenFile function to execute read and return the number of characters. 
   */
-  // int ReadFile(char *buffer, int size, OpenFileId id) {}
+   int ReadFile(char *buffer, int size, OpenFileId id) {
+      if(size<=0) return -1;
+      Read(id,buffer,size);
+      return size;
+   }
 
   // The CloseFile function is used for kernel close system call
   /* TODO (Close)
     1) If the id is out of range or indicates to a non-exist file, return -1
     2) Otherwise, delete the open file and clear its open file table.
   */ 
-  // int CloseFile(OpenFileId id) {}
+   int CloseFile(OpenFileId id){
+      int res = Close(id);
+      if(res>=0) return 1;
+      return 0;
+    }
 
   bool Remove(char *name) { return Unlink(name) == 0; }
 

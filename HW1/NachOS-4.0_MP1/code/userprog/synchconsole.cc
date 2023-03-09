@@ -101,7 +101,7 @@ void
 SynchConsoleOutput::PutChar(char ch)
 {
     lock->Acquire();
-    consoleOutput->PutChar(ch);
+    consoleOutput->PutChar(ch); //hardware display
     waitFor->P();
     lock->Release();
 }

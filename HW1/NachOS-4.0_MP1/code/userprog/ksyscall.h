@@ -42,16 +42,24 @@ int SysCreate(char *filename)
 }
 
 // TODO (Open): Finish kernel interface for system call (Open).
-// OpenFileId SysOpen(char *name) {}
+ OpenFileId SysOpen(char *name) {
+  return kernel->fileSystem->OpenAFile(name);
+ }
 
 // TODO (Read): Finish kernel interface for system call (Read).
-// int SysRead(char *buffer, int size, OpenFileId id) {}
+ int SysRead(char *buffer, int size, OpenFileId id) {
+  return kernel->fileSystem->ReadFile(buffer,size,id);
+ }
 
 
 // TODO (Write): Finish kernel interface for system call (Write).
-// int SysWrite(char *buffer, int size, OpenFileId id) {}
+ int SysWrite(char *buffer, int size, OpenFileId id) {
+  return kernel->fileSystem->WriteAFile(buffer,size,id);
+ }
 
 // TODO (Close): Finish kernel interface for system call (Close).
-// int SysClose(OpenFileId id) {}
+ int SysClose(OpenFileId id) {
+  return kernel->fileSystem->CloseFile(id);
+ }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */
