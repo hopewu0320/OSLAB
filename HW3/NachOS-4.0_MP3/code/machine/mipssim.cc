@@ -56,6 +56,7 @@ class Instruction {
 void
 Machine::Run()
 {
+	
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
     if (debug->IsEnabled('m')) {
@@ -64,12 +65,18 @@ Machine::Run()
     }
     kernel->interrupt->setStatus(UserMode);
     for (;;) {
+	//int start = kernel->stats->totalTicks;
 	DEBUG(dbgTraCode, "In Machine::Run(), into OneInstruction " << "== Tick " << kernel->stats->totalTicks << " ==");
+		 
         OneInstruction(instr);
+		
 	DEBUG(dbgTraCode, "In Machine::Run(), return from OneInstruction  " << "== Tick " << kernel->stats->totalTicks << " ==");
 		
 	DEBUG(dbgTraCode, "In Machine::Run(), into OneTick " << "== Tick " << kernel->stats->totalTicks << " ==");
 	kernel->interrupt->OneTick();
+	
+	//int end = kernel->stats->totalTicks;
+    //DEBUG(dbgSche,"CPU burstTime: "<<end-start<<endl);
 	DEBUG(dbgTraCode, "In Machine::Run(), return from OneTick " << "== Tick " << kernel->stats->totalTicks << " ==");
 	if (singleStep && (runUntilTime <= kernel->stats->totalTicks))
 		Debugger();

@@ -21,7 +21,7 @@
 #include "switch.h"
 #include "synch.h"
 #include "sysdep.h"
-
+#include "debug.h"
 // this is put at the top of the execution stack, for detecting stack overflows
 const int STACK_FENCEPOST = 0xdedbeef;
 
@@ -40,6 +40,11 @@ Thread::Thread(char* threadName, int threadID)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    ApproximateBurst = 0;
+    burstTime = 0;
+    start = 0;
+    end = 0;
+    accumulate = 0;
     for (int i = 0; i < MachineStateSize; i++) {
 	machineState[i] = NULL;		// not strictly necessary, since
 					// new thread ignores contents 
@@ -207,10 +212,28 @@ Thread::Yield ()
     
     DEBUG(dbgThread, "Yielding thread: " << name);
     
-    nextThread = kernel->scheduler->FindNextToRun();
+    nextThread = kernel->scheduler->FindNextToRun(); //這個接下來變Running
     if (nextThread != NULL) {
-	kernel->scheduler->ReadyToRun(this);
-	kernel->scheduler->Run(nextThread, FALSE);
+    //stop accumulating
+    
+
+    this->accumulate = this->accumulate + (nextThread->end-nextThread->start);
+    
+    this->setBurstTime(this->accumulate);
+    cout<<this->getName()<<": "<<this->getBurstTime()<<endl;
+	kernel->scheduler->ReadyToRun(this);  //把這個thread從Running到Ready
+    
+   
+    //resume accumulating
+    nextThread->start = kernel->stats->totalTicks;
+	kernel->scheduler->Run(nextThread, FALSE); //把readylist的thread送去running
+    nextThread->end= kernel->stats->totalTicks;
+    
+    //int end = kernel->stats->totalTicks;
+    //nextThread->setBurstTime(end-start);
+    
+    //DEBUG(dbgSche,"CPU burstTime: "<<this->getBurstTime()<<endl);
+    //cout<<"CPU burstTime: "<<this->getBurstTime()<<endl;
     }
     (void) kernel->interrupt->SetLevel(oldLevel);
 }
@@ -235,6 +258,8 @@ Thread::Yield ()
 //	so that there can't be a time slice between pulling the first thread
 //	off the ready list, and switching to it.
 //----------------------------------------------------------------------
+
+//True if 最後要刪除Thread
 void
 Thread::Sleep (bool finishing)
 {
@@ -247,6 +272,20 @@ Thread::Sleep (bool finishing)
     DEBUG(dbgTraCode, "In Thread::Sleep, Sleeping thread: " << name << ", " << kernel->stats->totalTicks);
 
     status = BLOCKED;
+    
+    int BurstTime = this->getBurstTime();   //T
+    double PreApproximateBurst = this->ApproximateBurst; //ti-1
+    
+
+    cout<<"pre approximateBurst: "<<PreApproximateBurst<<endl;
+    this->ApproximateBurst = 0.5*BurstTime + 0.5*PreApproximateBurst; //ti //更新
+    
+    DEBUG(dbgSche,"CPU BurstTime: "<<BurstTime<<endl);
+    DEBUG(dbgSche,"newApproximateBurst: "<<this->ApproximateBurst<<endl);
+
+    DEBUG(dbgSche,"[C] Tick "<<kernel->stats->totalTicks<<":Thread "<<kernel->currentThread->getName()<<
+    " update approximate burst time, from: "<<0.5*PreApproximateBurst<<" add "<<0.5*BurstTime<<
+    " , to "<<this->ApproximateBurst);
 	//cout << "debug Thread::Sleep " << name << "wait for Idle\n";
     while ((nextThread = kernel->scheduler->FindNextToRun()) == NULL) {
 		kernel->interrupt->Idle();	// no one to run, wait for an interrupt

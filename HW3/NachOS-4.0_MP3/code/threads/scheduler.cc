@@ -22,7 +22,7 @@
 #include "debug.h"
 #include "scheduler.h"
 #include "main.h"
-
+#define max(a,b) ((a>b)?a:b)
 //----------------------------------------------------------------------
 // Scheduler::Scheduler
 // 	Initialize the list of ready but not running threads.
@@ -55,11 +55,22 @@ Scheduler::~Scheduler()
 
 void
 Scheduler::ReadyToRun (Thread *thread)
-{
+{   
+    //int start = kernel->stats->totalTicks;
+    
+
     ASSERT(kernel->interrupt->getLevel() == IntOff);
     DEBUG(dbgThread, "Putting thread on ready list: " << thread->getName());
+    DEBUG(dbgSche,"[A] Tick "<<kernel->stats->totalTicks<<":Thread "<<thread->getName()
+    <<" is inserted into queue")
 	//cout << "Putting thread on ready list: " << thread->getName() << endl ;
+    
+    //thread->end = kernel->stats->totalTicks;
+    //thread->setBurstTime(thread->end-thread->start);
+    //cout<<"CPU burstTime: "<<thread->getBurstTime()<<endl;
+    
     thread->setStatus(READY);
+    
     readyList->Append(thread);
 }
 
@@ -79,7 +90,10 @@ Scheduler::FindNextToRun ()
     if (readyList->IsEmpty()) {
 		return NULL;
     } else {
-    	return readyList->RemoveFront();
+        Thread* frontThread  = readyList->RemoveFront();
+        DEBUG(dbgSche,"[B] Tick "<<kernel->stats->totalTicks<<":Thread "<<frontThread->getName()
+    <<" is removed from queue")
+    	return frontThread ;
     }
 }
 
@@ -100,9 +114,11 @@ Scheduler::FindNextToRun ()
 //		(when the next thread starts running)
 //----------------------------------------------------------------------
 
+//分配CPU
 void
 Scheduler::Run (Thread *nextThread, bool finishing)
 {
+    
     Thread *oldThread = kernel->currentThread;
     
     ASSERT(kernel->interrupt->getLevel() == IntOff);
@@ -121,17 +137,28 @@ Scheduler::Run (Thread *nextThread, bool finishing)
 					    // had an undetected stack overflow
 
     kernel->currentThread = nextThread;  // switch to the next thread
-    nextThread->setStatus(RUNNING);      // nextThread is now running
     
+    nextThread->setStatus(RUNNING);      // nextThread is now running
+   
+
     DEBUG(dbgThread, "Switching from: " << oldThread->getName() << " to: " << nextThread->getName());
     
     // This is a machine-dependent assembly language routine defined 
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
-
-    SWITCH(oldThread, nextThread);
-
+    
+    //int start = kernel->stats->totalTicks;
+    //int end = kernel->stats->totalTicks;
+    //nextThread->setBurstTime(end-start);
+    
+    //int start = kernel->stats->totalTicks;
+    SWITCH(oldThread, nextThread);  //從被block狀態回來
+    //int end = kernel->stats->totalTicks;
+    //oldThread->setBurstTime(end-start);
+    //cout<<"CPU burstTime: "<<oldThread->getBurstTime()<<endl;
+    
+    
     // we're back, running oldThread
       
     // interrupts are off when we return from switch!
