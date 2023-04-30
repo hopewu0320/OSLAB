@@ -29,9 +29,20 @@
 //	Initially, no ready threads.
 //----------------------------------------------------------------------
 
+/*
+static int
+compareSR(Thread* t1,Thread* t2)
+{
+    if(t1->getBurstTime() > t2->getBurstTime()) return 1;
+    else if(t1->getBurstTime() < t2->getBurstTime()) return -1;
+    else return t1->getID < t2->getID() ? -1 : 1;
+}
+*/
+
 Scheduler::Scheduler()
 { 
-    readyList = new List<Thread *>; 
+    readyList = new List<Thread *>;
+    //SRList = new SortedList<Thread *>(compareSR)
     toBeDestroyed = NULL;
 } 
 
@@ -153,7 +164,10 @@ Scheduler::Run (Thread *nextThread, bool finishing)
     //nextThread->setBurstTime(end-start);
     
     //int start = kernel->stats->totalTicks;
+    
     SWITCH(oldThread, nextThread);  //從被block狀態回來
+    
+    
     //int end = kernel->stats->totalTicks;
     //oldThread->setBurstTime(end-start);
     //cout<<"CPU burstTime: "<<oldThread->getBurstTime()<<endl;

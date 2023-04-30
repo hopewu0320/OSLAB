@@ -22,6 +22,7 @@
 #include "synch.h"
 #include "sysdep.h"
 #include "debug.h"
+#define max(a,b) ((a>b)?a:b)
 // this is put at the top of the execution stack, for detecting stack overflows
 const int STACK_FENCEPOST = 0xdedbeef;
 
@@ -213,27 +214,28 @@ Thread::Yield ()
     DEBUG(dbgThread, "Yielding thread: " << name);
     
     nextThread = kernel->scheduler->FindNextToRun(); //這個接下來變Running
-    if (nextThread != NULL) {
+
+    //bool preempted = nextThread->getBurstTime() < this->getBurstTime();
+    if (nextThread != NULL ) {
     //stop accumulating
     
 
-    this->accumulate = this->accumulate + (nextThread->end-nextThread->start);
+    this->accumulate = this->accumulate + (nextThread->end-nextThread->start);//如果沒被Block住一直累計Burst
     
     this->setBurstTime(this->accumulate);
-    cout<<this->getName()<<": "<<this->getBurstTime()<<endl;
+    cout<<this->getName()<<": "<<this->getBurstTime()<<endl; //ReadyToRun前print
 	kernel->scheduler->ReadyToRun(this);  //把這個thread從Running到Ready
-    
+
+    //this->setBurstTime(max(0,this->ApproximateBurst-this->getBurstTime()));//Remaining burst time
    
     //resume accumulating
     nextThread->start = kernel->stats->totalTicks;
 	kernel->scheduler->Run(nextThread, FALSE); //把readylist的thread送去running
     nextThread->end= kernel->stats->totalTicks;
     
-    //int end = kernel->stats->totalTicks;
-    //nextThread->setBurstTime(end-start);
     
-    //DEBUG(dbgSche,"CPU burstTime: "<<this->getBurstTime()<<endl);
-    //cout<<"CPU burstTime: "<<this->getBurstTime()<<endl;
+    
+    
     }
     (void) kernel->interrupt->SetLevel(oldLevel);
 }
@@ -272,8 +274,16 @@ Thread::Sleep (bool finishing)
     DEBUG(dbgTraCode, "In Thread::Sleep, Sleeping thread: " << name << ", " << kernel->stats->totalTicks);
 
     status = BLOCKED;
-    
+    if(!finishing) {
+        DEBUG(dbgSche,this->getName()<<" Got Blocked"<<endl);
+    }
+    else {
+        DEBUG(dbgSche,this->getName()<<" Got Terminated"<<endl);
+    }
+
     int BurstTime = this->getBurstTime();   //T
+    this->accumulate = 0;
+    this->setBurstTime(this->accumulate);
     double PreApproximateBurst = this->ApproximateBurst; //ti-1
     
 
