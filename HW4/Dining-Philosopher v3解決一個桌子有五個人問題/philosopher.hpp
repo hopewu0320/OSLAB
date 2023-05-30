@@ -23,7 +23,6 @@ public:
     void eat();
     void putdown(int id);
     void leave();
-    
 private:
     static void* run(void* arg);
     int id;
@@ -32,6 +31,7 @@ private:
     Table *table;
     pthread_t t;
     time_t t1;
+    int priority;
     
 };
 

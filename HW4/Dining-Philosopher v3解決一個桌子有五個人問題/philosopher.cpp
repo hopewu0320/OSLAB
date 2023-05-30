@@ -1,7 +1,7 @@
 #include "philosopher.hpp"
 void test();
 
-Philosopher::Philosopher(int id, Fork *leftFork, Fork *rightFork, Table *table) :id(id), cancelled(false), leftFork(leftFork), rightFork(rightFork), table(table) {
+Philosopher::Philosopher(int id, Fork *leftFork, Fork *rightFork, Table *table) :id(id), cancelled(false), leftFork(leftFork), rightFork(rightFork), table(table), priority(0) {
     srand((unsigned) time(&t1));
     
     
@@ -43,16 +43,20 @@ void Philosopher::eat() {
 void Philosopher::pickup(int id) {
     // TODO: implement the pickup interface, the philosopher needs to pick up the left fork first, then the right fork
     leftFork->wait();
+    printf("Now %d philosopher pick up %d fork \n",id,id);
     rightFork->wait();
-    printf("Now %d philosopher pick up %d fork and %d fork\n",id,id,(id+1)%PHILOSOPHERS);
+    printf("Now %d philosopher pick up %d fork \n",id,(id+1)%PHILOSOPHERS);
+    
 
 }
 
 void Philosopher::putdown(int id) {
     // TODO: implement the putdown interface, the philosopher needs to put down the left fork first, then the right fork
-    printf("Now %d philosopher put down %d fork and %d fork\n",id,id,(id+1)%PHILOSOPHERS);
     leftFork->signal();
+    printf("Now %d philosopher put down %d fork \n",id,id);
     rightFork->signal();
+    printf("Now %d philosopher put down %d fork \n",id,(id+1)%PHILOSOPHERS);
+    
 }
 
 void Philosopher::enter() {
@@ -78,27 +82,27 @@ void* Philosopher::run(void* arg) {
     p->enter();
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
-    //enter放外面:philosopher沒進table就用餐了, enter放裡面:可能有5個philosopher在餐桌
+
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     while (!p->cancelled) {
-        //pickup
+        
         
         
         p->think();
         p->pickup(p->id);
         p->eat();
         p->putdown(p->id);
-        //putdown
-        //test();
+        
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
         p->leave();
+        
         p->enter();
     }
     
     
     
-    //p->leave();
+   
     
 
     return NULL;
