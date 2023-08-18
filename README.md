@@ -1,3 +1,5 @@
+Dining Philosopher
+=== 
 # Table
 - 2~4 philosophers can enter this table
 - Using condition variable and mutex to maintain synchronization
