@@ -14,4 +14,4 @@ Dining Philosopher
 # Dining Philosopher Demo
 https://youtu.be/kLuxj88Kob4
 
-[![IMAGE ALT TEXT]](https://youtu.be/kLuxj88Kob4)
+
