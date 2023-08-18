@@ -13,3 +13,5 @@ Dining Philosopher
 - Remember at most four philosopher stay simultaneously in this table
 # Dining Philosopher Demo
 https://youtu.be/kLuxj88Kob4
+
+[![IMAGE ALT TEXT]](https://youtu.be/kLuxj88Kob4)
